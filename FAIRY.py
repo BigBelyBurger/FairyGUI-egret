@@ -163,6 +163,12 @@ ras_thread_stop_var_C = tk.BooleanVar(value=False)
 ras_time_array_C = np.array([])
 ras_voltage_array_C = np.array([])
 ras_current_array_C = np.array([])
+
+#LAKESHORE VARIABLES
+LS_curve_number_var = tk.IntVar(value=1)
+LS_Curve_Unit_var = tk.StringVar(value="Ohm/K")
+LS_Curve_Coefficient_var = tk.StringVar(value="positive")
+LS_Curve_location_var = tk.StringVar(value="")
 #endregion
 
 ##########################################################################################################################################################################
@@ -281,8 +287,8 @@ def IP_Connect():
         response, inst = UNIC.DeviceChecker(IP, SOCKET=PORT)
         print(response)
     else: 
-        response = "ROHDE"
-        inst = "rohde"
+        response = "LSCI"
+        inst = "lsci"
 
     if "Incorrect" not in response:
         if TestMode == False:
@@ -1210,6 +1216,129 @@ sr400_frame = ttk.LabelFrame(root, text="SR400 Photon Counter", padding=(10, 10)
 
 #region
 lakeshore_frame = ttk.LabelFrame(root, text="LAKESHORE Temperature Controller", padding=(10, 10))
+
+#CRDG tells you the temp reading for a single channel "CRDG? 1" for the first channel, etc...
+#CRVDEL to delete a curve
+#CRVHDR <curve>,<name>,<SN>,<format>,<limit value>,<coefficient>[term] Edit the header for a curve
+#DIOCUR <input> 0 for 10uA bias on the diode
+#HTRSET? request the heater status for 1 or 2
+#INCRV input curve, sets the curve that input a b c or d will use
+#INTYPE <input>,<sensor type>,<autorange>,<range>,<compensation>,<units>, input is 0 or 1 for 2.5V or 10V, 
+#   sensor type is 0 for disabled, 1 for diode, 2 for platinum rtd, 3 for ntc rtd, 4 for thermocouple, 5 for capacitance
+#   autorange is 0 for off, 1 for on
+#   range depends on the actual diode, see manual
+#   compensation is 0 for off, 1 for current reversal
+#   unit is 1 for K, 2 for C, 3 for Sensor
+#OUTMODE 1-4 for heater, 1-4 for channel, power up 0 for off, 1 for on
+#PID <output>, <P>, <I>, <D>
+#SETP <output>, <setpoint>, sets the actual temp setpoint for the output channel selected
+
+Curve_frame_LS = ttk.LabelFrame(lakeshore_frame, text="Curve handling", padding=(10, 10))
+Curve_frame_LS.grid(row=0, column=0, padx=10, pady=10)
+
+LabelMaker("Curve Header parameters", 0, 0, Curve_frame_LS, 0, 0)
+LabelMaker("Curve number", 50, 0, Curve_frame_LS, 0, 0)
+LS_curve_number_entry = EntryMaker(LS_curve_number_var,
+                                    5, 1,
+                                    Curve_frame_LS,
+                                    lambda event: Curve_Number_Changed(),
+                                    state = "normal",
+                                    padx=0, pady=0)
+
+LabelMaker("Between 21-59", 5, 2, Curve_frame_LS, 0, 0)
+
+ttk.Separator(Curve_frame_LS, orient='horizontal').grid(row=10, column=0, columnspan=20, sticky="ew", pady=10)
+
+LabelMaker("-- name", 11, 0, Curve_frame_LS, 0, 0)
+
+LabelMaker("-- Serial Number", 12, 0, Curve_frame_LS, 0, 0)
+
+LabelMaker("-- Unit format", 13, 0, Curve_frame_LS, 0, 0)
+
+LS_Unit_Combobox = ComboMaker(["mV/K", "V/K", "Ohm/K", "log(Ohm)/K"],
+                                LS_Curve_Unit_var,
+                                13, 1,
+                                Curve_frame_LS,
+                                lambda event: Changed_LS_Curve_Unit(),
+                                state="readonly")
+
+LabelMaker("-- limit", 14, 0, Curve_frame_LS, 0, 0)
+
+LabelMaker("-- Coefficient", 15, 0, Curve_frame_LS, 0, 0)
+LS_Coefficient_Combobox = ComboMaker(["negative", "positive"],
+                                        LS_Curve_Coefficient_var,
+                                        15, 1,
+                                        Curve_frame_LS,
+                                        lambda event: Changed_LS_Curve_Coefficient(),
+                                        state="readonly")
+
+Header_change_button = ButtonMaker("Change header",
+                                    16, 1,
+                                    Curve_frame_LS,
+                                    lambda: LS_Change_curve_header(),
+                                    style="OutputOff.TButton")
+
+ttk.Separator(Curve_frame_LS, orient='horizontal').grid(row=20, column=0, columnspan=20, sticky="ew", pady=10)
+
+LabelMaker("Select a curve to add", 30, 0, Curve_frame_LS, 0, 0)
+Curve_location_Entry = EntryMaker(LS_Curve_location_var,
+                                  30, 1,
+                                  Curve_frame_LS,
+                                  lambda event: LS_curve_location_changed(),
+                                  state = "normal",
+                                  padx=0 , pady=0,
+                                  columnspan = 3)
+
+LS_Add_curve_button = ButtonMaker("Add curve",
+                                  31, 1,
+                                  Curve_frame_LS,
+                                  lambda: Add_LS_Curve(),
+                                  style="OutputOff.TButton")
+
+LS_cha = ttk.LabelFrame(lakeshore_frame, text="Channel A", padding=(10, 10))
+LS_cha.grid(row=10, column=1, padx=10, pady=10)
+
+LS_chb = ttk.LabelFrame(lakeshore_frame, text="Channel B", padding=(10, 10))
+LS_chb.grid(row=10, column=2, padx=10, pady=10)
+
+LS_chc = ttk.LabelFrame(lakeshore_frame, text="Channel C", padding=(10, 10))
+LS_chc.grid(row=10, column=3, padx=10, pady=10)
+
+LS_chd = ttk.LabelFrame(lakeshore_frame, text="Channel D", padding=(10, 10))
+LS_chd.grid(row=10, column=4, padx=10, pady=10)
+
+
+#endregion
+
+##########################################################################################################################################################################
+#
+#           LAKESHORE FUNCTIONS
+#
+###########################################################################################################################################################################
+
+#region
+def Curve_Number_Changed():
+    pass
+
+def Changed_LS_Curve_Unit():
+    pass
+
+def Changed_LS_Curve_Coefficient():
+    pass
+
+def LS_Change_curve_header():
+    pass
+
+def Add_LS_Curve():
+    #Should delete the curvefirst before actually creating it just in case something fucks up
+    #Should also use the parameters above for the headers, even if they aren't correct, at least it's something
+    #And maybe use a random value or standard value for the first time that is then changed by the user
+    pass
+
+def LS_curve_location_changed():
+    #please check here if the file actually exists and if it is what the code expects to add it right after or not
+    pass
+
 #endregion
 
 ##########################################################################################################################################################################
