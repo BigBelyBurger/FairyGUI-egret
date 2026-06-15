@@ -3,3 +3,5 @@ node_modules
 .objs
 bin-debug
 bin-release
+__pycache__
+TestData
