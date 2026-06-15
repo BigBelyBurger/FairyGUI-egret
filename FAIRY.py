@@ -89,8 +89,8 @@ CodeReply = tk.StringVar(value = "")
 ErrorReply = tk.StringVar(value = "")
 
 #   SAVE LOCATION
-save_location_var = tk.StringVar(value = "C:/Users/alexa/OneDrive/Documenten/MyLIfeIsThereforMyLifeThinks/FAIRY/TestData/")
-save_file_var = tk.StringVar(value = "Keithley_test.txt")
+save_location_var = tk.StringVar(value = "/TestData/")
+save_file_var = tk.StringVar(value = "RAS_test.txt")
 
 #  KEITHLEY VARIABLES
 Keithley_output_var = tk.BooleanVar(value = False)
@@ -856,7 +856,7 @@ ras_frame = ttk.LabelFrame(root, text="ROHDE AND SCHWARZ", padding=(10, 10))
 ras_frame_A = ttk.LabelFrame(ras_frame, text= "Ch A", padding = (10, 10))
 ras_frame_A.grid(row=20, column=10, columnspan=2, sticky="ew", padx=10, pady=10)
 
-ras_output_button = ButtonMaker("Output OFF", 
+ras_output_button_A = ButtonMaker("Output OFF", 
                                 0, 0, 
                                 ras_frame_A, 
                                 lambda: ras_output_switch("A"), 
@@ -907,7 +907,7 @@ ras_actual_power_entry = EntryMaker(ras_actual_power_var_A,
 ras_frame_B = ttk.LabelFrame(ras_frame, text= "Ch B", padding = (10, 10))
 ras_frame_B.grid(row=20, column=20, columnspan=2, sticky="ew", padx=10, pady=10)
 
-ras_output_button = ButtonMaker("Output OFF", 
+ras_output_button_B = ButtonMaker("Output OFF", 
                                 0, 0, 
                                 ras_frame_B, 
                                 lambda: ras_output_switch("B"), 
@@ -958,6 +958,8 @@ ras_actual_power_entry = EntryMaker(ras_actual_power_var_B,
 ras_frame_C = ttk.LabelFrame(ras_frame, text= "Ch C", padding = (10, 10))
 ras_frame_C.grid(row=20, column=10, columnspan=2, sticky="ew", padx=10, pady=10)
 
+ras_output_button_C = None
+
 #endregion
 
 ##########################################################################################################################################################################
@@ -978,39 +980,39 @@ def ras_output_switch(channel):
     if channel == "A":
         if ras_output_state_var_A.get() == False:
             ras_output_state_var_A.set(True)
-            ras_output_button.config(text="Output ON", style="OutputOn.TButton")
+            ras_output_button_A.config(text="Output ON", style="OutputOn.TButton")
             ras_start_read_sense_loop(channel)
             CodeReply_Entry.config(style="CodeReplyNormal.TEntry")
             CodeReply.set("Output turned ON for channel " + channel)
         else:
             ras_output_state_var_A.set(False)
-            ras_output_button.config(text="Output OFF", style="OutputOff.TButton")
+            ras_output_button_A.config(text="Output OFF", style="OutputOff.TButton")
             ras_stop_read_sense_loop(channel)
             CodeReply_Entry.config(style="CodeReplyNormal.TEntry")
             CodeReply.set("Output turned OFF for channel " + channel)
     elif channel == "B":
         if ras_output_state_var_B.get() == False:
             ras_output_state_var_B.set(True)
-            ras_output_button.config(text="Output ON", style="OutputOn.TButton")
+            ras_output_button_B.config(text="Output ON", style="OutputOn.TButton")
             ras_start_read_sense_loop(channel)
             CodeReply_Entry.config(style="CodeReplyNormal.TEntry")
             CodeReply.set("Output turned ON for channel " + channel)
         else:
             ras_output_state_var_B.set(False)
-            ras_output_button.config(text="Output OFF", style="OutputOff.TButton")
+            ras_output_button_B.config(text="Output OFF", style="OutputOff.TButton")
             ras_stop_read_sense_loop(channel)
             CodeReply_Entry.config(style="CodeReplyNormal.TEntry")
             CodeReply.set("Output turned OFF for channel " + channel)
     elif channel == "C":
         if ras_output_state_var_C.get() == False:
             ras_output_state_var_C.set(True)
-            ras_output_button.config(text="Output ON", style="OutputOn.TButton")
+            ras_output_button_C.config(text="Output ON", style="OutputOn.TButton")
             ras_start_read_sense_loop(channel)
             CodeReply_Entry.config(style="CodeReplyNormal.TEntry")
             CodeReply.set("Output turned ON for channel " + channel)
         else:
             ras_output_state_var_C.set(False)
-            ras_output_button.config(text="Output OFF", style="OutputOff.TButton")
+            ras_output_button_C.config(text="Output OFF", style="OutputOff.TButton")
             ras_stop_read_sense_loop(channel)
             CodeReply_Entry.config(style="CodeReplyNormal.TEntry")
             CodeReply.set("Output turned OFF for channel " + channel)
