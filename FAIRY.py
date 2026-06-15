@@ -165,10 +165,13 @@ ras_voltage_array_C = np.array([])
 ras_current_array_C = np.array([])
 
 #LAKESHORE VARIABLES
-LS_curve_number_var = tk.IntVar(value=1)
+LS_curve_number_var = tk.IntVar(value=0)
 LS_Curve_Unit_var = tk.StringVar(value="Ohm/K")
 LS_Curve_Coefficient_var = tk.StringVar(value="positive")
 LS_Curve_location_var = tk.StringVar(value="")
+LS_Curve_limit_var = tk.DoubleVar(value=0.0)
+LS_Curve_name_var = tk.StringVar(value="")
+LS_curve_serialnumber_var = tk.StringVar(value="")
 #endregion
 
 ##########################################################################################################################################################################
@@ -1250,11 +1253,22 @@ LabelMaker("Between 21-59", 5, 2, Curve_frame_LS, 0, 0)
 ttk.Separator(Curve_frame_LS, orient='horizontal').grid(row=10, column=0, columnspan=20, sticky="ew", pady=10)
 
 LabelMaker("-- name", 11, 0, Curve_frame_LS, 0, 0)
+LS_Curve_name_Entry = EntryMaker(LS_Curve_name_var,
+                                 11, 1,
+                                 Curve_frame_LS,
+                                 lambda event: LS_Curve_name_changed(),
+                                 state = "normal",
+                                 padx = 0, pady=0)
 
 LabelMaker("-- Serial Number", 12, 0, Curve_frame_LS, 0, 0)
+LS_Curve_serialnumber_Entry = EntryMaker(LS_curve_serialnumber_var, 
+                                         12, 1,
+                                         Curve_frame_LS,
+                                         lambda event: LS_Curve_serialnumber_changed(),
+                                         state = "normal",
+                                         padx = 0, pady = 0)
 
 LabelMaker("-- Unit format", 13, 0, Curve_frame_LS, 0, 0)
-
 LS_Unit_Combobox = ComboMaker(["mV/K", "V/K", "Ohm/K", "log(Ohm)/K"],
                                 LS_Curve_Unit_var,
                                 13, 1,
@@ -1263,6 +1277,12 @@ LS_Unit_Combobox = ComboMaker(["mV/K", "V/K", "Ohm/K", "log(Ohm)/K"],
                                 state="readonly")
 
 LabelMaker("-- limit", 14, 0, Curve_frame_LS, 0, 0)
+LS_Curve_limit_Entry = EntryMaker(LS_Curve_limit_var,
+                                  14, 1, 
+                                  Curve_frame_LS,
+                                  lambda event: LS_Curve_limit_changed(),
+                                  state= "normal",
+                                  padx = 0, pady = 0)
 
 LabelMaker("-- Coefficient", 15, 0, Curve_frame_LS, 0, 0)
 LS_Coefficient_Combobox = ComboMaker(["negative", "positive"],
@@ -1271,12 +1291,6 @@ LS_Coefficient_Combobox = ComboMaker(["negative", "positive"],
                                         Curve_frame_LS,
                                         lambda event: Changed_LS_Curve_Coefficient(),
                                         state="readonly")
-
-Header_change_button = ButtonMaker("Change header",
-                                    16, 1,
-                                    Curve_frame_LS,
-                                    lambda: LS_Change_curve_header(),
-                                    style="OutputOff.TButton")
 
 ttk.Separator(Curve_frame_LS, orient='horizontal').grid(row=20, column=0, columnspan=20, sticky="ew", pady=10)
 
@@ -1318,15 +1332,101 @@ LS_chd.grid(row=10, column=4, padx=10, pady=10)
 
 #region
 def Curve_Number_Changed():
-    pass
+    if LS_curve_number_var.get() < 21 or LS_curve_number_var.get() > 59:
+        CodeReply_Entry.config(style="CodeReplyError.TEntry")
+        CodeReply.set("Curve number must be between 21 and 59")
+    else:
+        CodeReply_Entry.config(style="CodeReplyNormal.TEntry")
+        CodeReply.set("Curve number changed to: " + str(LS_curve_number_var.get()))
+
+        if TestMode == False:
+            Result, Error = UNIC.Query_And_Check("CRVHDR?", inst)
+            Params = Result.split(",")
+        else:
+            Params = ["test curve", 1729, "Ohm/K", 300, "positive"]
+        #Modify the fields below to fit the header of the curve selected
+        LS_Curve_Unit_var.set(Params[2])
+        LS_Curve_Coefficient_var .set(Params[4])
+        LS_Curve_limit_var.set(Params[3])
+        LS_Curve_name_var.set(Params[0])
+        LS_curve_serialnumber_var.set(Params[1])
 
 def Changed_LS_Curve_Unit():
-    pass
+    if LS_curve_number_var.get() > 20 and LS_curve_number_var.get() < 60:
+        #Modify the header in the tool for the curve selected   
+        if TestMode == False:
+            Result, Error = UNIC.Write_And_Check(f"CRVHDR {LS_curve_number_var.get()},{LS_Curve_name_var.get()},{LS_curve_serialnumber_var.get()},{LS_Curve_Unit_var.get()},{LS_Curve_limit_var.get()}",
+                                "CRVHDR?",
+                                inst,
+                                f"{LS_Curve_name_var.get()},{LS_curve_serialnumber_var.get()},{LS_Curve_Unit_var.get()},{LS_Curve_limit_var.get()}")
+            CheckError(Result, Error, "Failed to change the header correctly, please check the values entered !")
+        else:
+            Result, Error = True, "0, No error"
+        if Result:
+            CodeReply_Entry.config(style="CodeReplyNormal.TEntry")
+            CodeReply.set("Curve unit changed to: " + str(LS_Curve_Unit_var.get()))
+    else:
+        CodeReply_Entry.config(style="CodeReplyError.TEntry")
+        CodeReply.set("Please selected a curve first")
+
+def LS_Curve_limit_changed():
+    if LS_Curve_limit_var.get() < 0 or LS_Curve_limit_var.get() > 1000:
+        CodeReply_Entry.config(style="CodeReplyError.TEntry")
+        CodeReply.set("Curve limit must be between 0 and 1000 K")
+    else:
+        if LS_curve_number_var.get() > 20 and LS_curve_number_var.get() < 60:
+            #Modify the header in the tool for the curve selected
+            if TestMode == False:
+                Result, Error = UNIC.Write_And_Check(f"CRVHDR {LS_curve_number_var.get()},{LS_Curve_name_var.get()},{LS_curve_serialnumber_var.get()},{LS_Curve_Unit_var.get()},{LS_Curve_limit_var.get()}",
+                                    "CRVHDR?",
+                                    inst,
+                                    f"{LS_Curve_name_var.get()},{LS_curve_serialnumber_var.get()},{LS_Curve_Unit_var.get()},{LS_Curve_limit_var.get()}")
+                CheckError(Result, Error, "Failed to change the header correctly, please check the values entered !")
+            else:
+                Result, Error = True, "0, No error"
+            if Result:
+                CodeReply_Entry.config(style="CodeReplyNormal.TEntry")
+                CodeReply.set("Change the curve limit to " + str(LS_Curve_limit_var.get()))
+        else:
+            CodeReply_Entry.config(style="CodeReplyError.TEntry")
+            CodeReply.set("Please selected a curve first")
+
+def LS_Curve_name_changed():
+    #Modify the header in the tool for the curve selected
+    if LS_curve_number_var.get() > 20 and LS_curve_number_var.get() < 60:
+        if TestMode == False:
+            Result, Error = UNIC.Write_And_Check(f"CRVHDR {LS_curve_number_var.get()},{LS_Curve_name_var.get()},{LS_curve_serialnumber_var.get()},{LS_Curve_Unit_var.get()},{LS_Curve_limit_var.get()}",
+                                "CRVHDR?",
+                                inst,
+                                f"{LS_Curve_name_var.get()},{LS_curve_serialnumber_var.get()},{LS_Curve_Unit_var.get()},{LS_Curve_limit_var.get()}")
+            CheckError(Result, Error, "Failed to change the header correctly, please check the values entered !")
+        else:
+            Result, Error = True, "0, No error"
+        if Result:
+            CodeReply_Entry.config(style="CodeReplyNormal.TEntry")
+            CodeReply.set("Changed the curve name to " + str(LS_Curve_name_var.get()))
+    else:
+        CodeReply_Entry.config(style="CodeReplyError.TEntry")
+        CodeReply.set("Please selected a curve first")
+
+def LS_Curve_serialnumber_changed():
+    if LS_curve_number_var.get() > 20 and LS_curve_number_var.get() < 60:
+        if TestMode == False:
+            Result, Error = UNIC.Write_And_Check(f"CRVHDR {LS_curve_number_var.get()},{LS_Curve_name_var.get()},{LS_curve_serialnumber_var.get()},{LS_Curve_Unit_var.get()},{LS_Curve_limit_var.get()}",
+                                "CRVHDR?",
+                                inst,
+                                f"{LS_Curve_name_var.get()},{LS_curve_serialnumber_var.get()},{LS_Curve_Unit_var.get()},{LS_Curve_limit_var.get()}")
+            CheckError(Result, Error, "Failed to change the header correctly, please check the values entered !")
+        else:
+            Result, Error = True, "0, No error"
+        if Result:
+            CodeReply_Entry.config(style="CodeReplyNormal.TEntry")
+            CodeReply.set("Changed the curve's serial number to " + str(LS_curve_serialnumber_var.get()))
+    else:
+        CodeReply_Entry.config(style="CodeReplyError.TEntry")
+        CodeReply.set("Please selected a curve first")
 
 def Changed_LS_Curve_Coefficient():
-    pass
-
-def LS_Change_curve_header():
     pass
 
 def Add_LS_Curve():
