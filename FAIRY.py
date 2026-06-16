@@ -172,6 +172,10 @@ LS_Curve_location_var = tk.StringVar(value="")
 LS_Curve_limit_var = tk.DoubleVar(value=0.0)
 LS_Curve_name_var = tk.StringVar(value="")
 LS_curve_serialnumber_var = tk.StringVar(value="")
+LS_chA_output_var = tk.BooleanVar(value = False)
+LS_chB_output_var = tk.BooleanVar(value = False)
+LS_chC_output_var = tk.BooleanVar(value = False)
+LS_chD_output_var = tk.BooleanVar(value = False)
 #endregion
 
 ##########################################################################################################################################################################
@@ -1240,7 +1244,7 @@ Curve_frame_LS = ttk.LabelFrame(lakeshore_frame, text="Curve handling", padding=
 Curve_frame_LS.grid(row=0, column=0, padx=10, pady=10)
 
 LabelMaker("Curve Header parameters", 0, 0, Curve_frame_LS, 0, 0)
-LabelMaker("Curve number", 50, 0, Curve_frame_LS, 0, 0)
+LabelMaker("Curve number", 5, 0, Curve_frame_LS, 0, 0)
 LS_curve_number_entry = EntryMaker(LS_curve_number_var,
                                     5, 1,
                                     Curve_frame_LS,
@@ -1308,6 +1312,15 @@ LS_Add_curve_button = ButtonMaker("Add curve",
                                   Curve_frame_LS,
                                   lambda: Add_LS_Curve(),
                                   style="OutputOff.TButton")
+
+LS_Channel_frames = ttk.LabelFrame(lakeshore_frame, text = "Channels", padding = (10, 10))
+LS_Channel_frames.grid(row = 10, column = 0, padx = 10, pady = 10)
+
+LabelMaker("Active channels", row = 10, column = 0, root = LS_Channel_frames, padx=0, pady=0)
+LS_ChannelA_Switch_Check = CheckButtonMaker("A", LS_chA_output_var,
+                                            20, 1,
+                                            LS_Channel_frames,
+                                            lambda event: LS_Switched_channel_A())
 
 LS_cha = ttk.LabelFrame(lakeshore_frame, text="Channel A", padding=(10, 10))
 LS_cha.grid(row=10, column=1, padx=10, pady=10)
@@ -1427,7 +1440,21 @@ def LS_Curve_serialnumber_changed():
         CodeReply.set("Please selected a curve first")
 
 def Changed_LS_Curve_Coefficient():
-    pass
+    if LS_curve_number_var.get() > 20 and LS_curve_number_var.get() < 60:
+        if TestMode == False:
+            Result, Error = UNIC.Write_And_Check(f"CRVHDR {LS_curve_number_var.get()},{LS_Curve_name_var.get()},{LS_curve_serialnumber_var.get()},{LS_Curve_Unit_var.get()},{LS_Curve_limit_var.get()}",
+                                "CRVHDR?",
+                                inst,
+                                f"{LS_Curve_name_var.get()},{LS_curve_serialnumber_var.get()},{LS_Curve_Unit_var.get()},{LS_Curve_limit_var.get()}")
+            CheckError(Result, Error, "Failed to change the header correctly, please check the values entered !")
+        else:
+            Result, Error = True, "0, No error"
+        if Result:
+            CodeReply_Entry.config(style="CodeReplyNormal.TEntry")
+            CodeReply.set("Changed the curve's coefficient to " + str(LS_Curve_Coefficient_var.get()))
+    else:
+        CodeReply_Entry.config(style="CodeReplyError.TEntry")
+        CodeReply.set("Please selected a curve first")
 
 def Add_LS_Curve():
     #Should delete the curvefirst before actually creating it just in case something fucks up
@@ -1437,6 +1464,9 @@ def Add_LS_Curve():
 
 def LS_curve_location_changed():
     #please check here if the file actually exists and if it is what the code expects to add it right after or not
+    pass
+
+def LS_Switched_channel_A():
     pass
 
 #endregion
