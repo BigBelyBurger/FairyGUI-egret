@@ -176,12 +176,6 @@ LS_chA_output_var = tk.BooleanVar(value = False)
 LS_chB_output_var = tk.BooleanVar(value = False)
 LS_chC_output_var = tk.BooleanVar(value = False)
 LS_chD_output_var = tk.BooleanVar(value = False)
-LS_chA_temp_var = tk.DoubleVar(value=0.0)
-LS_chA_loop_running_var = tk.BooleanVar(value=False)
-LS_chA_loop_stop_var = tk.BooleanVar(value=False)
-LS_chA_start_time = 0.0
-LS_chA_time_array = np.array([])
-LS_chA_temp_array = np.array([])
 #endregion
 
 ##########################################################################################################################################################################
@@ -1331,30 +1325,7 @@ LS_ChannelA_Switch_Check = CheckButtonMaker("A", LS_chA_output_var,
 LS_cha = ttk.LabelFrame(lakeshore_frame, text="Channel A", padding=(10, 10))
 LS_cha.grid(row=10, column=1, padx=10, pady=10)
 
-LabelMaker("Temp A", 0, 0, LS_cha, 0, 0)
-LS_chA_temp_entry = EntryMaker(LS_chA_temp_var,
-                               0, 1,
-                               LS_cha,
-                               lambda event: None,
-                               state="readonly",
-                               padx=0, pady=0)
 
-LS_chA_start_button = ButtonMaker("Start A",
-                                  1, 0,
-                                  LS_cha,
-                                  lambda: start_read_LS_A_loop(),
-                                  style="OutputOn.TButton")
-LS_chA_stop_button = ButtonMaker("Stop A",
-                                 1, 1,
-                                 LS_cha,
-                                 lambda: stop_read_LS_A_loop(),
-                                 style="OutputOff.TButton")
-
-LS_chA_fig = Figure(figsize=(4, 3), dpi=100)
-LS_chA_ax = LS_chA_fig.add_subplot(111)
-LS_chA_canvas = FigureCanvasTkAgg(LS_chA_fig, master=LS_cha)
-LS_chA_canvas.draw_idle()
-LS_chA_canvas.get_tk_widget().grid(row=2, column=0, columnspan=2)
 
 LS_chb = ttk.LabelFrame(lakeshore_frame, text="Channel B", padding=(10, 10))
 LS_chb.grid(row=10, column=2, padx=10, pady=10)
@@ -1499,54 +1470,6 @@ def LS_curve_location_changed():
 
 def LS_Switched_channel_A():
     pass
-
-
-def start_read_LS_A_loop():
-    global LS_chA_start_time
-
-    if LS_chA_loop_running_var.get() == False:
-        LS_chA_start_time = now_to_number()
-        LS_chA_loop_stop_var.set(False)
-        loop_thread = threading.Thread(target=read_LS_A_loop)
-        loop_thread.start()
-
-
-def stop_read_LS_A_loop():
-    if LS_chA_loop_running_var.get() == True:
-        LS_chA_loop_stop_var.set(True)
-    print("LS channel A loop stopped")
-
-
-def read_LS_A_loop():
-    global LS_chA_time_array
-    global LS_chA_temp_array
-
-    LS_chA_loop_running_var.set(True)
-    LS_chA_loop_stop_var.set(False)
-    while LS_chA_loop_running_var.get():
-        if TestMode == False:
-            response, Error = UNIC.Query_And_Check("KRDG? 1", inst)
-            try:
-                temperature = float(str(response).strip())
-            except Exception:
-                temperature = 0.0
-            LS_chA_temp_var.set(temperature)
-        else:
-            temperature = 10.0 + np.sin(now_to_number())
-            LS_chA_temp_var.set(temperature)
-
-        if LS_chA_loop_stop_var.get() == True:
-            LS_chA_loop_running_var.set(False)
-            break
-
-        LS_chA_time_var = now_to_number()
-        LS_chA_time_array = np.append(LS_chA_time_array, LS_chA_time_var - LS_chA_start_time)
-        LS_chA_temp_array = np.append(LS_chA_temp_array, LS_chA_temp_var.get())
-
-        FAIRY_G.LS_temp_graph(LS_chA_ax, LS_chA_canvas, LS_chA_time_array, LS_chA_temp_array)
-
-        time.sleep(0.5)
-    LS_chA_loop_running_var.set(False)
 
 #endregion
 

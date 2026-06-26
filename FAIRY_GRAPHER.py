@@ -31,3 +31,14 @@ def Keithley_bias_graph(ax, ax2, canvas, sense_array, bias_array, time_array):
     ax2.legend(loc='upper right')
     
     canvas.draw_idle()
+
+
+def LS_temp_graph(ax, canvas, time_array, temp_array):
+    ax.clear()
+    ax.plot(time_array, temp_array, marker='o', color='tab:blue')
+    ax.set_xlabel('Time (s)')
+    ax.set_ylabel('Temperature (K)', color='tab:blue')
+    ax.tick_params(axis='y', labelcolor='tab:blue')
+    ax.grid(True)
+    ax.set_title('Lakeshore Channel A Temperature')
+    canvas.draw_idle()
